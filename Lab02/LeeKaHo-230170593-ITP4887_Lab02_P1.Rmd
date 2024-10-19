@@ -1,0 +1,70 @@
+Name: Lee Ka Ho
+ID: 230170593
+
+Lab 02 P1
+
+press Ctrl+alt+i to create a chunk
+
+1. write the step E lab code to the chunk
+```{r}
+cat("\014") #This is clean screen command.
+####################################
+#you can comment with Hashtag Icon!#
+####################################
+welcome <- "This my first start of R"
+print(welcome)
+print("It is output stream function same as printF(), system.out.println, cout<<) ")
+print("By the way, Who are you? I am R!")
+Answer <- readline(prompt="I am ")
+readmessage <- paste("Oh! you are ", Answer, " ! Nice to Meet you!",sep="")
+print(readmessage)
+```
+2.Try to convert the java code to R language:
+```{r}
+ApplePrice  <- 5
+OrangePrice  <- 6
+
+Apple <- as.integer(readline(prompt = "How many Apple do you want to buy: ")) 
+Orange <- as.integer(readline(prompt = "How many Orange do you want to buy: ")) 
+
+Total <- Apple*ApplePrice+Orange*OrangePrice
+
+print(paste("You have to pay: HKD", Total,sep=""))
+```
+
+3.Try to convert the following C++ code to R language
+```{r}
+Next <- "Y"
+total <-  as.integer(readline(prompt = "Input your firt number: "))
+
+while (Next == "Y" | Next == "y"){
+  Next <- readline(prompt = "Next? ")
+  if (Next == "Y" | Next == "y"){
+    input <- as.integer(readline("What do you want? "))
+    total <- total + input
+  }
+}
+
+print(total)
+```
+4.Ask user amount of number that users wanted, then input certain required of numbers and store all of them using For-loop
+```{r}
+number <- as.integer(readline("How many number(s) you need to input? "))
+input <- sapply(1:number, function(x){
+  x <- as.integer(readline(prompt = " What is your number: "))
+})
+
+#input <- NULL
+#for (i in 1:number){
+#  input[i] <- as.integer(readline("What is your number? "))
+#}
+plot(input,type="l")
+```
+
+5. Try to assign the following data types.
+```{r}
+# Sys.time() + 10 # + 10 sec
+runif(100,12,20)
+sample(12:20,100,replace = T)
+```
+

@@ -1,0 +1,110 @@
+Lab 03 P2
+Lee Ka Ho
+Q1
+```{r}
+#previous setting
+Q7dataframe <- data.frame(A = 1:8,
+                          B = c("Miku Hatsune",
+                          "Mikuma",
+                          "Kar98k",
+                          "Kato Megumi",
+                          "Aqua",
+                          "Kanna Kamuy",
+                          "Freyja Wion",
+                          "Sona"),
+                          D = c("Vocaloid",
+                          "Kancolle",
+                          "Girls Frontier",
+                          "Saenai Heroine no Sodatekata",
+                          "KonoSuba",
+                          "Miss Kobayashi's Dragon Maid",
+                          "Macross Delta",
+                          "League of Legends"),
+                          C = c(513,
+                                329,
+                                637,
+                                703,
+                                877,
+                                324,
+                                617,
+                                164)
+                          )
+
+#preparation before analystic
+colnames(Q7dataframe) <- c("ProdID",	"Product",	"Animation",	"SaleVolume")
+
+Q7dataframe$Price <- c(1200,
+                       500,
+                       1617,
+                       230,
+                       150,
+                       237,
+                       540,
+                       2500
+                       )
+
+#Average Sale Volume
+mean(Q7dataframe$SaleVolume)
+
+#Total Sale Volume
+sum(Q7dataframe$SaleVolume)
+
+#laragest sale volume
+max(Q7dataframe$SaleVolume)
+#sort(Q7dataframe$SaleVolume,dec = T)[1]
+#range(Q7dataframe$SaleVolume)[2]
+
+#smallest sale volume
+min(Q7dataframe$SaleVolume)
+#sort(Q7dataframe$SaleVolume)[1]
+#range(Q7dataframe$SaleVolume)[1]
+
+#the most expensive price
+max(Q7dataframe$Price)
+
+#the cheapest price
+min(Q7dataframe$Price)
+
+#summary of Sale Volume
+summary(Q7dataframe$SaleVolume)
+
+#summary of Price
+summary(Q7dataframe$Price)
+```
+
+Q2
+```{r}
+Q8dataframe <- Q7dataframe
+#Revenue for each projuct
+Q8dataframe$Revenue <- Q8dataframe$SaleVolume*Q8dataframe$Price
+Q8dataframe
+
+#Which Animation brings the best profit?
+Q8dataframe[order(Q8dataframe$Revenue, decreasing = T),][1,]$Animation
+#or
+#head(Q8dataframe[order(Q8dataframe$Revenue, decreasing = T),],n=1)$Animation
+#or
+#Q8dataframe[Q8dataframe$Revenue==max(Q8dataframe$Revenue),]$Animation
+
+#Which Product sold the most?
+Q8dataframe[Q8dataframe$SaleVolume==max(Q8dataframe$SaleVolume),]$Product
+
+#Find the Best three Products
+Q8dataframe[order(Q8dataframe$Revenue, decreasing = T),][1:3,]$Product
+#or
+#head(Q8dataframe[order(Q8dataframe$Revenue, decreasing = T),],n=3)$Product
+
+#Contribution of each product in product Sale. Note: GGplot2 have package function Precent()
+PS <- Q8dataframe[,c("Product","SaleVolume")]
+PS$Proportion <- (PS$SaleVolume/sum(PS$SaleVolume))*100
+PS
+
+#Revenue Gap between best Sale and worst Sale product
+Best <- Q8dataframe[Q8dataframe$SaleVolume==max(Q8dataframe$SaleVolume),]$Revenue
+Worst <- Q8dataframe[Q8dataframe$SaleVolume==min(Q8dataframe$SaleVolume),]$Revenue
+print(paste("Revenue Gap :", Best - Worst))
+
+#Product Revenue that worse than product of ??Kancolle??.
+Standard <- Q8dataframe[Q8dataframe$Animation=="Kancolle","Revenue"]
+Q8dataframe[Q8dataframe$Revenue < Standard,"Product"]
+```

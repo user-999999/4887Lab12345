@@ -1,0 +1,213 @@
+Lab3 P2
+```{r}
+install.packages("sqldf")
+```
+
+package used
+```{r}
+require(stringr)
+require(sqldf)
+```
+
+1. Data preparation and omit the row name.
+```{r}
+inputTable <- read.csv(file.choose())
+inputTable <- inputTable[,-1]
+```
+
+2. Unified the value (Data Cleasing)
+```{r}
+clean <- inputTable
+#Seperate Value and Unit
+clean$BOD <- as.Date(clean$BOD, format = '%d/%m/%Y') # split the date 
+
+# Seperate Value and Unit
+clean$Hvalue <- as.numeric(str_extract(clean$Height,"\\d+\\.?\\d*")) # split Height col 
+clean$Hunit <- str_extract(clean$Height,"[:alpha:]+") # split Height col 
+clean$Height <- NULL # make it null no val
+
+clean$Wvalue <- as.numeric(str_extract(clean$Weight,"\\d+\\.?\\d*")) # split Weight col 
+clean$Wunit <- str_extract(clean$Weight,"[:alpha:]+") # split Weight col 
+clean$Weight <- NULL
+
+#transform value under unified unit
+clean$Height <- unlist(mapply(function(x,y){
+  if (y == "m") {
+    x <- x*100 # if y is m than x * 100
+  }else if (y == "mm") {
+    x <- x/10 # if y is mm than x / 10
+  }else{
+    x <- x # if y is not m or mm than keep it
+  }
+},clean$Hvalue,clean$Hunit))
+
+
+clean$Weight <- unlist(mapply(function(x,y){
+  if (y == "lb") {
+    x <- x/2.2 # if y is lb than x / 2.2
+  }else{
+    x <- x # if y is not lb than keep it
+  }
+},clean$Wvalue,clean$Wunit))
+
+
+clean <- clean[,-c(5:8)]
+clean # call the table
+```
+
+3. transform value (use sqldf may be better) (ETL)
+```{r}
+transform <- clean
+#transform$Race <- sapply(transform$Race, function(x){
+#  if (x==1){
+#    x <- "American Indian"
+#  }else if (x==2){
+#    x <- "Asian"
+#  }else if (x==3){
+#    x <- "Black"
+#  }else if (x==4){
+#    x <- "Hispanic"
+#  }else if (x==5){
+#    x <- "White"
+#  }else if (x==6){
+#    x <- "Middle-Easten"
+#  }
+#})
+
+Reference <- data.frame(Code = 1:6,
+                        RaceName = c("American Indian",
+                                     "Asian",
+                                     "Black",
+                                     "Hispanic",
+                                     "White",
+                                     "Middle-Easten"))
+
+# Reference
+
+transform <- merge(transform,
+                   Reference,
+                   by.x = "Race",
+                   by.y = "Code",
+                   sort=F)
+
+transform <- transform[,-1]
+
+transform
+```
+
+4. Cal Age and BMI (ETL)
+```{r}
+Final <- transform
+
+Final$BMI <- Final$Weight/(Final$Height/100)^2
+
+Final$Age <- as.numeric(format(Sys.Date(),"%Y"))-as.numeric(format(Final$BOD,"%Y"))
+
+Final
+```
+
+5. Average age by gender and show as dataframe.
+```{r}
+data.frame(AverageAge = tapply(Final$Age, Final$gender,mean))
+```
+
+6. Average BMI by Race who are older than 29
+```{r}
+older29 <- Final[Final$Age>29,]
+data.frame(AverageBMI = tapply(older29$BMI,older29$RaceName,mean))
+```
+
+7. Find all young adult girls (age around 18~22)
+```{r}
+query <- Final$gender=="Female"&Final$Age>=27&Final$Age<=29
+Final[query,]
+```
+
+8. count number of people by gender
+```{r}
+# tapply(Final$gender, Final$gender, length)
+
+table(Final$gender)
+```
+
+9. List all people born in Year 2000
+```{r}
+Final[format(Final$BOD,"%Y")==2000,]
+```
+
+10. Find the details of listed people
+```{r}
+Namelist <- c("Foster, Jade", "Manegdeg, An", "Knox-Bell, Ahmawn", "Wright, Cheyenne", "al-Beshara, Sajaa", "Watkins, Nykea")
+
+Final[Final$Name %in% Namelist,]
+```
+
+11. Different between One of the Tallest Asian and One of the shortest American, And who?
+```{r}
+Asian <- Final[Final$RaceName=="Asian",]
+print(TA <- Asian[Asian$Height==max(Asian$Height),][1,])
+
+# shortest American
+USA <- Final[Final$RaceName=="American Indian",]
+print(SU <- USA[USA$Height==min(USA$Height),][1,])
+
+print(paste("Different is", TA$Height-SU$Height))
+```
+
+12.There are some steps
+  1. Find all Asian who are the age from 25 to 30.
+  2. list the detail(Name,HValue,WValue) of the targeted people.
+  3. sort the pervious result(Name,HValue) by WValue in decending.
+```{r}
+Result1 <- Final[Final$RaceName=="Asian"&Final$Age>=25&Final$Age<=30,]
+Result2 <- Result1[,c("Name","HValue","WValue"),]
+# Result3 <- Result2[order(Result2)]
+```
+
+The following part using SQL (you may use more than one Query if necessary)
+
+13. Find all mans, age around 24 to 29, and calculate the average Weight by Race.
+```{r}
+sqldf("
+      SELECT RaceName, Avg(Weight) as MeanWeight
+      FROM Final
+      WHERE gender = 'Male' AND Age Between 24 AND 29
+      GROUP BY RaceName
+      ")
+```
+
+14. List all the Names that their Race average Height(HValue) that higher than 150cm.
+```{r}
+partial <- sqldf("
+      SELECT RaceName, Avg(Height) as MH 
+      FROM Final 
+      GROUP BY RaceName 
+      HAVING MH > 150
+      ")
+
+sqldf("
+      SELECT Final.Name, Final.RaceName
+      FROM Final, partial
+      WHERE Final.RaceName = partial.RaceName
+      ")
+```
+
+15. Calculate average age of this dataset.
+```{r}
+sqldf("
+      SELECT Avg(Age) as MeanAge
+      FROM Final
+      ")
+```
+
+OK! Let try some plottings! This is just a simple trial, more information and learning about Data Visualization will be shown in ITP4864.
+
+16.	Visualise the Race distribution who was born in 1997. 
+```{r}
+Born1997 <- Final[format(Final$BOD, "%Y")==1997,]
+RaceCount <- data.frame(table(Born1997$RaceName))
+pie(RaceCount$Freq,
+    labels = RaceCount$Var1,
+    col=topo.colors(nrow(RaceCount)))
+```
+
